@@ -6,6 +6,7 @@ import com.kuleshov.userservice.entity.User;
 import com.kuleshov.userservice.exception.UserAlreadyExistsException;
 import com.kuleshov.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,14 +14,16 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
 
     @Transactional
     public UserResponse createUser(UserCreateRequest request) {
-
+        log.info("Attempting to create user with email: {}", request.email());
         if (userRepository.existsByEmail(request.email())) {
+            log.warn("User creation failed. Email already exists: {}", request.email());
             throw new UserAlreadyExistsException("User with email " + request.email() + " is already exist");
         }
         User user = User.builder()
@@ -31,6 +34,8 @@ public class UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        log.info("User successfully created with ID: {}", savedUser.getId());
 
         return new UserResponse(
                 savedUser.getId(),
